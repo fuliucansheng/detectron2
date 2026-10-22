@@ -41,6 +41,23 @@ def nms_edit_distance(keep1, keep2):
 
 
 class TestNMSRotated(unittest.TestCase):
+    def test_nms_rotated_empty_cpu(self, device="cpu"):
+        for dtype in (torch.float32, torch.float64):
+            with self.subTest(device=device, dtype=dtype):
+                boxes = torch.empty((0, 5), dtype=dtype, device=device)
+                scores = torch.empty((0,), dtype=dtype, device=device)
+                keep = torch.ops.detectron2.nms_rotated(boxes, scores, 0.5)
+                self.assertEqual(keep.shape, (0,))
+                self.assertEqual(keep.dtype, torch.int64)
+                self.assertEqual(keep.device, boxes.device)
+                boxes = torch.tensor([[5, 5, 4, 4, 30]], dtype=dtype, device=device)
+                scores = torch.ones((1,), dtype=dtype, device=device)
+                self.assertEqual(nms_rotated(boxes, scores, 0.5).tolist(), [0])
+
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA not available")
+    def test_nms_rotated_empty_cuda(self):
+        self.test_nms_rotated_empty_cpu(device="cuda")
+
     def reference_horizontal_nms(self, boxes, scores, iou_threshold):
         """
         Args:
