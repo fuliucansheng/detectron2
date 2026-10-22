@@ -87,6 +87,10 @@ at::Tensor nms_rotated_cuda(
   AT_ASSERTM(scores.is_cuda(), "scores must be a CUDA tensor");
   at::cuda::CUDAGuard device_guard(dets.device());
 
+  if (dets.size(0) == 0) {
+    return at::empty({0}, dets.options().dtype(at::kLong));
+  }
+
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
   auto dets_sorted = dets.index_select(0, order_t);
 
